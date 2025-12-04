@@ -489,6 +489,15 @@ namespace SETUNA
                 if (optSetuna.AISummary != null)
                 {
                     Logger.Log($"LoadOption: AI Summary config loaded - Enabled={optSetuna.AISummary.Enabled}, EngineType={optSetuna.AISummary.EngineType}, LocalEndpoint={optSetuna.AISummary.LocalEndpoint}");
+                    
+                    // Migration: Update English prompt to Chinese if still using old English prompt
+                    var oldEnglishPrompt = "Analyze the provided screenshots and generate a comprehensive summary in markdown format";
+                    if (optSetuna.AISummary.PromptTemplate != null && optSetuna.AISummary.PromptTemplate.StartsWith(oldEnglishPrompt))
+                    {
+                        Logger.Log("LoadOption: Migrating prompt template to Chinese");
+                        optSetuna.AISummary.PromptTemplate = "请分析提供的这些屏幕截图，并生成一份全面的中文 Markdown 格式摘要报告。请包括：1) 概述部分，描述主要内容；2) 详细发现，使用标题和要点组织；3) 对于任何观察到的结构化数据，使用表格展示；4) 关键观察部分。请使用清晰的层次结构，包含一级到三级标题。";
+                        SaveOption(); // Save the migrated config
+                    }
                 }
                 else
                 {
