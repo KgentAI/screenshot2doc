@@ -711,9 +711,26 @@
     <Error Condition="!Exists('..\packages\Costura.Fody.4.1.0\build\Costura.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.4.1.0\build\Costura.Fody.props'))" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>mkdir $(SolutionDir)\publish
-7z a $(TargetName)_$(ConfigurationName)_$(PlatformName).zip $(ProjectDir)$(OutDir)$(TargetFileName) $(ProjectDir)$(OutDir)$(TargetFileName).config
-copy /y $(TargetName)_$(ConfigurationName)_$(PlatformName).zip $(SolutionDir)\publish\$(TargetName)_$(ConfigurationName)_$(PlatformName).zip</PostBuildEvent>
+    <PostBuildEvent>@echo off
+REM Post-build packaging (optional, will not fail build if 7z is unavailable)
+if exist "$(ProjectDir)$(OutDir)$(TargetFileName)" (
+  echo Build successful: $(TargetFileName)
+  if exist "C:\Program Files\7-Zip\7z.exe" (
+    if not "$(SolutionDir)" == "*Undefined*\" (
+      if not exist "$(SolutionDir)publish" mkdir "$(SolutionDir)publish"
+      "C:\Program Files\7-Zip\7z.exe" a "$(TargetName)_$(ConfigurationName)_$(PlatformName).zip" "$(ProjectDir)$(OutDir)$(TargetFileName)" "$(ProjectDir)$(OutDir)$(TargetFileName).config"
+      copy /y "$(TargetName)_$(ConfigurationName)_$(PlatformName).zip" "$(SolutionDir)publish\$(TargetName)_$(ConfigurationName)_$(PlatformName).zip"
+    ) else (
+      REM Use local build directory since SolutionDir is undefined
+      if not exist "$(ProjectDir)bin\publish" mkdir "$(ProjectDir)bin\publish"
+      "C:\Program Files\7-Zip\7z.exe" a "$(ProjectDir)bin\publish\$(TargetName)_$(ConfigurationName)_$(PlatformName).zip" "$(ProjectDir)$(OutDir)$(TargetFileName)" "$(ProjectDir)$(OutDir)$(TargetFileName).config"
+      echo Created zip: $(ProjectDir)bin\publish\$(TargetName)_$(ConfigurationName)_$(PlatformName).zip
+    )
+  ) else (
+    echo 7-Zip not found at "C:\Program Files\7-Zip\7z.exe", skipping zip creation
+  )
+)
+exit /b 0</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

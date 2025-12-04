@@ -9,7 +9,6 @@ using System.Windows.Forms;
 using System.Xml.Serialization;
 using com.clearunit;
 using SETUNA.Main;
-using SETUNA.Main.AI;
 using SETUNA.Main.KeyItems;
 using SETUNA.Main.Option;
 using SETUNA.Main.Style;
@@ -102,12 +101,12 @@ namespace SETUNA
             setunaIconMenu.Items.Clear();
             setunaIconMenu.Items.Add(new CScrapListStyle().GetToolStrip(scrapBook));
             
-            // Add AI Summary menu item
-            var aiSummaryItem = new ToolStripMenuItem("AI Summary...");
-            aiSummaryItem.Click += miAISummary_Click;
-            aiSummaryItem.Enabled = scrapBook.Any(s => s.Image != null);
-            setunaIconMenu.Items.Add(aiSummaryItem);
-            setunaIconMenu.Items.Add(new ToolStripSeparator());
+            // Add AI Summary menu item (TODO: implement AISummaryForm)
+            // var aiSummaryItem = new ToolStripMenuItem("AI Summary...");
+            // aiSummaryItem.Click += miAISummary_Click;
+            // aiSummaryItem.Enabled = scrapBook.Count > 0;
+            // setunaIconMenu.Items.Add(aiSummaryItem);
+            // setunaIconMenu.Items.Add(new ToolStripSeparator());
             
             setunaIconMenu.Items.Add(new CDustBoxStyle().GetToolStrip(scrapBook));
             setunaIconMenu.Items.Add(new CDustEraseStyle().GetToolStrip());
@@ -494,7 +493,8 @@ namespace SETUNA
             Option();
         }
 
-        // AI Summary menu item click handler
+        // AI Summary menu item click handler (TODO: implement AISummaryForm)
+        /*
         private void miAISummary_Click(object sender, EventArgs e)
         {
             if (IsCapture || IsOption)
@@ -518,6 +518,7 @@ namespace SETUNA
                 );
             }
         }
+        */
 
         // Token: 0x06000203 RID: 515 RVA: 0x0000B0C8 File Offset: 0x000092C8
         private void miSetunaClose_Click(object sender, EventArgs e)
