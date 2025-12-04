@@ -20,7 +20,7 @@ namespace SETUNA.Main.AI.Services
     public class QwenVLService : IMultimodalService, IDisposable
     {
         private const string BaseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-        private const string ModelId = "qwen-vl-flash";
+        private const string ModelId = "qwen3-vl-flash";
         private const int MaxRetries = 3;
         private const int InitialRetryDelayMs = 2000;
 

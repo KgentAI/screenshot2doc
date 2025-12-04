@@ -81,6 +81,19 @@ namespace SETUNA.Main.Option
             pictureBox_fullscreenCursor.BackColor = _so.Setuna.FullscreenCursorLineColor;
 
             checkBox_transparent.Checked = _so.Setuna.BackgroundTransparentEnabled;
+
+            // Load AI Summary configuration
+            if (_so.AISummary != null)
+            {
+                if (chkAISummaryEnabled != null)
+                    chkAISummaryEnabled.Checked = _so.AISummary.Enabled;
+                if (cmbAIEngine != null)
+                    cmbAIEngine.SelectedIndex = _so.AISummary.EngineType == "cloud" ? 1 : 0;
+                if (txtAIApiKey != null)
+                    txtAIApiKey.Text = _so.AISummary.ApiKey ?? "";
+                if (txtAILocalEndpoint != null)
+                    txtAILocalEndpoint.Text = _so.AISummary.LocalEndpoint ?? "http://localhost:8080";
+            }
         }
 
         // Token: 0x060002D5 RID: 725 RVA: 0x00013908 File Offset: 0x00011B08
@@ -157,6 +170,24 @@ namespace SETUNA.Main.Option
             _so.Setuna.FullscreenCursorColorB = pictureBox_fullscreenCursor.BackColor.B;
 
             _so.Setuna.BackgroundTransparentEnabled = checkBox_transparent.Checked;
+
+            // Save AI Summary configuration
+            if (_so.AISummary != null)
+            {
+                _so.AISummary.Enabled = chkAISummaryEnabled != null && chkAISummaryEnabled.Checked;
+                if (cmbAIEngine != null)
+                {
+                    _so.AISummary.EngineType = cmbAIEngine.SelectedIndex == 0 ? "local" : "cloud";
+                }
+                if (txtAIApiKey != null)
+                {
+                    _so.AISummary.ApiKey = txtAIApiKey.Text;
+                }
+                if (txtAILocalEndpoint != null)
+                {
+                    _so.AISummary.LocalEndpoint = txtAILocalEndpoint.Text;
+                }
+            }
 
             foreach (var item in Mainform.Instance.scrapBook)
             {

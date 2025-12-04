@@ -123,6 +123,14 @@
             this.label19 = new System.Windows.Forms.Label();
             this.groupBox15 = new System.Windows.Forms.GroupBox();
             this.checkBox_transparent = new System.Windows.Forms.CheckBox();
+            this.groupBox17 = new System.Windows.Forms.GroupBox();
+            this.chkAISummaryEnabled = new System.Windows.Forms.CheckBox();
+            this.label20 = new System.Windows.Forms.Label();
+            this.cmbAIEngine = new System.Windows.Forms.ComboBox();
+            this.label21 = new System.Windows.Forms.Label();
+            this.txtAIApiKey = new System.Windows.Forms.TextBox();
+            this.label22 = new System.Windows.Forms.Label();
+            this.txtAILocalEndpoint = new System.Windows.Forms.TextBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.lblMenuMisc = new System.Windows.Forms.Label();
             this.lblMenuStyle = new System.Windows.Forms.Label();
@@ -168,6 +176,7 @@
             this.groupBox16.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_fullscreenCursor)).BeginInit();
             this.groupBox15.SuspendLayout();
+            this.groupBox17.SuspendLayout();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
@@ -1323,6 +1332,7 @@
             // pageMisc
             // 
             this.pageMisc.BackColor = System.Drawing.Color.White;
+            this.pageMisc.Controls.Add(this.groupBox17);
             this.pageMisc.Controls.Add(this.groupBox14);
             this.pageMisc.Controls.Add(this.groupBox16);
             this.pageMisc.Controls.Add(this.groupBox15);
@@ -1483,6 +1493,94 @@
             this.checkBox_transparent.Text = "鼠标是否可穿透截图透明部分";
             this.checkBox_transparent.UseVisualStyleBackColor = true;
             // 
+            // groupBox17
+            // 
+            this.groupBox17.Controls.Add(this.chkAISummaryEnabled);
+            this.groupBox17.Controls.Add(this.label20);
+            this.groupBox17.Controls.Add(this.cmbAIEngine);
+            this.groupBox17.Controls.Add(this.label21);
+            this.groupBox17.Controls.Add(this.txtAIApiKey);
+            this.groupBox17.Controls.Add(this.label22);
+            this.groupBox17.Controls.Add(this.txtAILocalEndpoint);
+            this.groupBox17.Location = new System.Drawing.Point(13, 462);
+            this.groupBox17.Margin = new System.Windows.Forms.Padding(8, 6, 8, 6);
+            this.groupBox17.Name = "groupBox17";
+            this.groupBox17.Padding = new System.Windows.Forms.Padding(8, 6, 8, 6);
+            this.groupBox17.Size = new System.Drawing.Size(1076, 260);
+            this.groupBox17.TabIndex = 15;
+            this.groupBox17.TabStop = false;
+            this.groupBox17.Text = "AI Summary";
+            // 
+            // chkAISummaryEnabled
+            // 
+            this.chkAISummaryEnabled.AutoSize = true;
+            this.chkAISummaryEnabled.Location = new System.Drawing.Point(30, 40);
+            this.chkAISummaryEnabled.Margin = new System.Windows.Forms.Padding(8, 6, 8, 6);
+            this.chkAISummaryEnabled.Name = "chkAISummaryEnabled";
+            this.chkAISummaryEnabled.Size = new System.Drawing.Size(231, 34);
+            this.chkAISummaryEnabled.TabIndex = 0;
+            this.chkAISummaryEnabled.Text = "Enable AI Summary";
+            this.chkAISummaryEnabled.UseVisualStyleBackColor = true;
+            // 
+            // label20
+            // 
+            this.label20.AutoSize = true;
+            this.label20.Location = new System.Drawing.Point(30, 96);
+            this.label20.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
+            this.label20.Name = "label20";
+            this.label20.Size = new System.Drawing.Size(88, 30);
+            this.label20.TabIndex = 1;
+            this.label20.Text = "Engine:";
+            // 
+            // cmbAIEngine
+            // 
+            this.cmbAIEngine.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbAIEngine.FormattingEnabled = true;
+            this.cmbAIEngine.Items.AddRange(new object[] {
+            "MiniCPM-V-4.5 (Local)",
+            "Qwen3-VL-Flash (Cloud)"});
+            this.cmbAIEngine.Location = new System.Drawing.Point(220, 90);
+            this.cmbAIEngine.Margin = new System.Windows.Forms.Padding(8, 6, 8, 6);
+            this.cmbAIEngine.Name = "cmbAIEngine";
+            this.cmbAIEngine.Size = new System.Drawing.Size(400, 38);
+            this.cmbAIEngine.TabIndex = 2;
+            // 
+            // label21
+            // 
+            this.label21.AutoSize = true;
+            this.label21.Location = new System.Drawing.Point(30, 152);
+            this.label21.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
+            this.label21.Name = "label21";
+            this.label21.Size = new System.Drawing.Size(163, 30);
+            this.label21.TabIndex = 3;
+            this.label21.Text = "Cloud API Key:";
+            // 
+            // txtAIApiKey
+            // 
+            this.txtAIApiKey.Location = new System.Drawing.Point(220, 146);
+            this.txtAIApiKey.Margin = new System.Windows.Forms.Padding(8, 6, 8, 6);
+            this.txtAIApiKey.Name = "txtAIApiKey";
+            this.txtAIApiKey.Size = new System.Drawing.Size(820, 38);
+            this.txtAIApiKey.TabIndex = 4;
+            // 
+            // label22
+            // 
+            this.label22.AutoSize = true;
+            this.label22.Location = new System.Drawing.Point(30, 208);
+            this.label22.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
+            this.label22.Name = "label22";
+            this.label22.Size = new System.Drawing.Size(178, 30);
+            this.label22.TabIndex = 5;
+            this.label22.Text = "Local Endpoint:";
+            // 
+            // txtAILocalEndpoint
+            // 
+            this.txtAILocalEndpoint.Location = new System.Drawing.Point(220, 202);
+            this.txtAILocalEndpoint.Margin = new System.Windows.Forms.Padding(8, 6, 8, 6);
+            this.txtAILocalEndpoint.Name = "txtAILocalEndpoint";
+            this.txtAILocalEndpoint.Size = new System.Drawing.Size(820, 38);
+            this.txtAILocalEndpoint.TabIndex = 6;
+            // 
             // panel1
             // 
             this.panel1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(81)))), ((int)(((byte)(163)))), ((int)(((byte)(236)))));
@@ -1614,10 +1712,11 @@
             this.ClientSize = new System.Drawing.Size(1449, 1000);
             this.Controls.Add(this.panel3);
             this.Controls.Add(this.panel2);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             this.Margin = new System.Windows.Forms.Padding(8, 6, 8, 6);
-            this.MaximizeBox = false;
+            this.MaximizeBox = true;
             this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(800, 600);
             this.Name = "OptionForm";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
@@ -1980,5 +2079,13 @@
         private System.Windows.Forms.GroupBox groupBox14;
         private System.Windows.Forms.CheckBox checkBox_cursor;
         private System.Windows.Forms.CheckBox checkBox_magnifier;
+        private System.Windows.Forms.GroupBox groupBox17;
+        private System.Windows.Forms.CheckBox chkAISummaryEnabled;
+        private System.Windows.Forms.Label label20;
+        private System.Windows.Forms.ComboBox cmbAIEngine;
+        private System.Windows.Forms.Label label21;
+        private System.Windows.Forms.TextBox txtAIApiKey;
+        private System.Windows.Forms.Label label22;
+        private System.Windows.Forms.TextBox txtAILocalEndpoint;
     }
 }

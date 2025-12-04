@@ -12,6 +12,7 @@ using SETUNA.Main.AI.Models;
 using SETUNA.Main.AI.Services;
 using SETUNA.Main.AI.UI;
 using SETUNA.Main.Option;
+using AISummaryConfig = SETUNA.Main.Option.SetunaOption.AISummaryConfig;
 
 namespace SETUNA.Main.AI
 {
@@ -24,6 +25,7 @@ namespace SETUNA.Main.AI
         private List<ScrapBase> _screenshots;
         private MultimodalResponse _currentResponse;
         private CancellationTokenSource _cancellationTokenSource;
+        private string _markdownCacheFile;
 
         // UI Controls
         private SplitContainer splitContainer;
@@ -42,10 +44,16 @@ namespace SETUNA.Main.AI
 
         public AISummaryForm()
         {
+            // Set up cache file path
+            var exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var exeDir = System.IO.Path.GetDirectoryName(exePath);
+            _markdownCacheFile = System.IO.Path.Combine(exeDir, "ai_summary_cache.md");
+            
             InitializeComponent();
             InitializeControls();
             LoadConfiguration();
             LoadScreenshots();
+            LoadCachedMarkdown();
         }
 
         private void InitializeComponent()
@@ -162,7 +170,7 @@ namespace SETUNA.Main.AI
             }
 
             // Set engine selection
-            if (_config.Engine == "qwen3-vl-flash")
+            if (_config.EngineType == "cloud")
                 engineComboBox.SelectedIndex = 1;
             else
                 engineComboBox.SelectedIndex = 0;
@@ -195,6 +203,35 @@ namespace SETUNA.Main.AI
             }
 
             statusLabel.Text = $"Loaded {_screenshots.Count} screenshot(s)";
+        }
+
+        private void LoadCachedMarkdown()
+        {
+            try
+            {
+                if (System.IO.File.Exists(_markdownCacheFile))
+                {
+                    var cachedContent = System.IO.File.ReadAllText(_markdownCacheFile, System.Text.Encoding.UTF8);
+                    if (!string.IsNullOrWhiteSpace(cachedContent))
+                    {
+                        MarkdownRenderer.Render(markdownDisplay, cachedContent);
+                        exportMarkdownButton.Enabled = true;
+                        statusLabel.Text = "Loaded cached analysis from previous session";
+                        
+                        // Create a dummy response object for export functionality
+                        _currentResponse = new MultimodalResponse
+                        {
+                            Success = true,
+                            MarkdownContent = cachedContent,
+                            ProcessingTimeMs = 0
+                        };
+                    }
+                }
+            }
+            catch
+            {
+                // Silently ignore cache loading errors
+            }
         }
 
         private PictureBox CreateThumbnail(ScrapBase scrap, int index)
@@ -242,8 +279,9 @@ namespace SETUNA.Main.AI
 
             try
             {
-                // Update config from UI
-                _config.Engine = engineComboBox.SelectedIndex == 1 ? "qwen3-vl-flash" : "minicpm-v4.5";
+                // Update config from UI (store model name in ModelName instead of EngineType)
+                _config.ModelName = engineComboBox.SelectedIndex == 1 ? "qwen3-vl-flash" : "minicpm-v4.5";
+                _config.EngineType = engineComboBox.SelectedIndex == 1 ? "cloud" : "local";
 
                 // Create cancellation token
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -258,6 +296,9 @@ namespace SETUNA.Main.AI
                     exportExcelButton.Enabled = true;
                     statusLabel.Text = "Analysis complete";
                     timeLabel.Text = $"{_currentResponse.ProcessingTimeMs / 1000.0:F2}s";
+                    
+                    // Save to cache
+                    SaveMarkdownCache(_currentResponse.MarkdownContent);
                 }
                 else
                 {
@@ -340,29 +381,13 @@ namespace SETUNA.Main.AI
 
         private void ExportExcelButton_Click(object sender, EventArgs e)
         {
-            if (_currentResponse == null || !_currentResponse.Success)
-                return;
-
-            using (var dialog = new SaveFileDialog())
-            {
-                dialog.Filter = "Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*";
-                dialog.DefaultExt = "xlsx";
-                dialog.FileName = ExcelExporter.GetDefaultFilename();
-                dialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    string errorMessage;
-                    if (ExcelExporter.ExportTablesToExcel(_currentResponse.MarkdownContent, dialog.FileName, out errorMessage))
-                    {
-                        MessageBox.Show($"Exported successfully to:\n{dialog.FileName}", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show(errorMessage ?? "Failed to export Excel file.", "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
-                }
-            }
+            // Excel export is temporarily disabled (requires EPPlus library)
+            MessageBox.Show(
+                "Excel export is not available in this version.\n" +
+                "Please use Markdown export instead.",
+                "Feature Not Available",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
 
         private void SetControlsEnabled(bool enabled)
@@ -370,7 +395,20 @@ namespace SETUNA.Main.AI
             engineComboBox.Enabled = enabled;
             analyzeButton.Enabled = enabled;
             exportMarkdownButton.Enabled = enabled && _currentResponse != null && _currentResponse.Success;
-            exportExcelButton.Enabled = enabled && _currentResponse != null && _currentResponse.Success;
+            // Excel export disabled - requires EPPlus library
+            exportExcelButton.Enabled = false;
+        }
+
+        private void SaveMarkdownCache(string content)
+        {
+            try
+            {
+                System.IO.File.WriteAllText(_markdownCacheFile, content, System.Text.Encoding.UTF8);
+            }
+            catch
+            {
+                // Silently ignore cache saving errors
+            }
         }
 
         protected override void Dispose(bool disposing)

@@ -110,11 +110,14 @@
       <HintPath>..\packages\Svg.2.2.1\lib\net35\Svg.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing.PSD, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Drawing.PSD.0.1.0\lib\net40\System.Drawing.PSD.dll</HintPath>
     </Reference>
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Runtime.Remoting" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -174,6 +177,7 @@
     <Compile Include="Main\Common\BaseForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Main\Common\Logger.cs" />
     <Compile Include="Main\Common\Utils.cs" />
     <Compile Include="Main\HotKeyID.cs" />
     <Compile Include="Main\Magnifier.cs">
@@ -238,6 +242,20 @@
     <Compile Include="Main\Option\StyleEditForm.Designer.cs">
       <DependentUpon>StyleEditForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Main\AI\AISummaryForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Main\AI\Exceptions\AIServiceException.cs" />
+    <Compile Include="Main\AI\Export\MarkdownExporter.cs" />
+    <Compile Include="Main\AI\Models\AISummaryMetadata.cs" />
+    <Compile Include="Main\AI\Models\MultimodalRequest.cs" />
+    <Compile Include="Main\AI\Models\MultimodalResponse.cs" />
+    <Compile Include="Main\AI\Services\IMultimodalService.cs" />
+    <Compile Include="Main\AI\Services\MiniCPMService.cs" />
+    <Compile Include="Main\AI\Services\MultimodalServiceFactory.cs" />
+    <Compile Include="Main\AI\Services\QwenVLService.cs" />
+    <Compile Include="Main\AI\UI\MarkdownRenderer.cs" />
+    <Compile Include="Main\AI\Utils\ImageHelper.cs" />
     <Compile Include="Main\RGBColor.cs" />
     <Compile Include="Main\ScrapBase.cs">
       <SubType>Form</SubType>

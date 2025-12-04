@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using SETUNA.Main.AI.Exceptions;
 using SETUNA.Main.Option;
+using AISummaryConfig = SETUNA.Main.Option.SetunaOption.AISummaryConfig;
 
 namespace SETUNA.Main.AI.Services
 {
@@ -23,49 +24,48 @@ namespace SETUNA.Main.AI.Services
 
             IMultimodalService service;
 
-            switch (config.Engine?.ToLowerInvariant())
+            // Determine service type based on engine type
+            var engineType = config.EngineType?.ToLowerInvariant();
+            
+            if (engineType == "local")
             {
-                case "minicpm-v4.5":
-                case "minicpm":
-                    if (string.IsNullOrWhiteSpace(config.LocalEndpoint))
-                    {
-                        throw new AIServiceConfigurationException("Local endpoint is not configured");
-                    }
+                if (string.IsNullOrWhiteSpace(config.LocalEndpoint))
+                {
+                    throw new AIServiceConfigurationException("Local endpoint is not configured");
+                }
 
-                    service = new MiniCPMService(config.LocalEndpoint, config.TimeoutSeconds);
+                service = new MiniCPMService(config.LocalEndpoint, config.TimeoutSeconds);
 
-                    // Validate endpoint availability
-                    var isAvailable = await service.IsAvailableAsync().ConfigureAwait(false);
-                    if (!isAvailable)
-                    {
-                        throw new AIServiceConfigurationException(
-                            $"Local AI service at {config.LocalEndpoint} is not responding. " +
-                            "Please ensure the server is running."
-                        );
-                    }
-                    break;
-
-                case "qwen3-vl-flash":
-                case "qwen":
-                case "qwen-vl":
-                    if (string.IsNullOrWhiteSpace(config.ApiKey))
-                    {
-                        throw new AIServiceConfigurationException("API key is not configured for cloud service");
-                    }
-
-                    if (config.ApiKey.Length < 8)
-                    {
-                        throw new AIServiceConfigurationException("API key appears to be invalid (too short)");
-                    }
-
-                    service = new QwenVLService(config.ApiKey, config.TimeoutSeconds);
-                    break;
-
-                default:
+                // Validate endpoint availability
+                var isAvailable = await service.IsAvailableAsync().ConfigureAwait(false);
+                if (!isAvailable)
+                {
                     throw new AIServiceConfigurationException(
-                        $"Unknown AI engine: {config.Engine}. " +
-                        "Supported engines are 'minicpm-v4.5' and 'qwen3-vl-flash'"
+                        $"Local AI service at {config.LocalEndpoint} is not responding. " +
+                        "Please ensure the server is running."
                     );
+                }
+            }
+            else if (engineType == "cloud")
+            {
+                if (string.IsNullOrWhiteSpace(config.ApiKey))
+                {
+                    throw new AIServiceConfigurationException("API key is not configured for cloud service");
+                }
+
+                if (config.ApiKey.Length < 8)
+                {
+                    throw new AIServiceConfigurationException("API key appears to be invalid (too short)");
+                }
+
+                service = new QwenVLService(config.ApiKey, config.TimeoutSeconds);
+            }
+            else
+            {
+                throw new AIServiceConfigurationException(
+                    $"Unknown AI engine type: {config.EngineType}. " +
+                    "Supported engine types are 'local' and 'cloud'"
+                );
             }
 
             return service;

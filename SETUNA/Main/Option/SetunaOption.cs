@@ -758,7 +758,8 @@ namespace SETUNA.Main.Option
                 hkScrap = hkScrap,
                 blHotKey = blHotKey,
                 Setuna = Setuna,
-                Scrap = Scrap
+                Scrap = Scrap,
+                AISummary = AISummary
             };
             for (var i = 0; i < Styles.Count; i++)
             {
@@ -1210,16 +1211,16 @@ namespace SETUNA.Main.Option
 
             public AISummaryConfig()
             {
-                // Default configuration values
-                Enabled = false;
+                // Default configuration values - should be configured by user
+                Enabled = false;  // Disabled by default until user configures
                 EngineType = "local";  // "local" or "cloud"
                 LocalEndpoint = "http://localhost:8080";
                 CloudApiBaseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-                ApiKey = string.Empty;
+                ApiKey = string.Empty;  // Must be set by user
                 ModelName = "qwen3-vl-plus";
                 MaxImages = 5;
                 TimeoutSeconds = 30;
-                PromptTemplate = "Analyze the provided screenshots and generate a comprehensive summary in markdown format. Include: 1) Overview section describing the main content, 2) Detailed findings organized with headings and bullet points, 3) Tables for any structured data observed, 4) Key observations section. Use clear hierarchical structure with H1-H3 headings.";
+                PromptTemplate = "请分析提供的这些屏幕截图，并生成一份全面的中文 Markdown 格式摘要报告。请包括：1) 概述部分，描述主要内容；2) 详细发现，使用标题和要点组织；3) 对于任何观察到的结构化数据，使用表格展示；4) 关键观察部分。请使用清晰的层次结构，包含一级到三级标题。";
             }
         }
     }

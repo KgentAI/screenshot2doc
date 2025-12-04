@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Xml.Serialization;
 using com.clearunit;
 using SETUNA.Main;
+using SETUNA.Main.Common;
 using SETUNA.Main.KeyItems;
 using SETUNA.Main.Option;
 using SETUNA.Main.Style;
@@ -39,7 +40,7 @@ namespace SETUNA
             scrapBook.DustBoxCapacity = 5;
             keyBook = optSetuna.GetKeyItemBook();
             _imgpool = new List<ScrapSource>();
-            SetSubMenu();
+            // SetSubMenu() will be called in OptionApply() after config is loaded
 
             Text = $"SETUNA {Application.ProductVersion}";
 
@@ -97,16 +98,43 @@ namespace SETUNA
         // Token: 0x060001F5 RID: 501 RVA: 0x0000A600 File Offset: 0x00008800
         private void SetSubMenu()
         {
+            Logger.Log("SetSubMenu: Starting menu setup");
+            
             setunaIconMenu.Scrap = scrapBook.GetDummyScrap();
             setunaIconMenu.Items.Clear();
             setunaIconMenu.Items.Add(new CScrapListStyle().GetToolStrip(scrapBook));
             
-            // Add AI Summary menu item (TODO: implement AISummaryForm)
-            // var aiSummaryItem = new ToolStripMenuItem("AI Summary...");
-            // aiSummaryItem.Click += miAISummary_Click;
-            // aiSummaryItem.Enabled = scrapBook.Count > 0;
-            // setunaIconMenu.Items.Add(aiSummaryItem);
-            // setunaIconMenu.Items.Add(new ToolStripSeparator());
+            // Add AI Summary menu item
+            Logger.Log($"SetSubMenu: Checking AI Summary config - optSetuna.AISummary is {(optSetuna.AISummary == null ? "NULL" : "NOT NULL")}");
+            
+            if (optSetuna.AISummary != null)
+            {
+                Logger.Log($"SetSubMenu: AISummary.Enabled = {optSetuna.AISummary.Enabled}");
+                Logger.Log($"SetSubMenu: AISummary.EngineType = {optSetuna.AISummary.EngineType ?? "NULL"}");
+                Logger.Log($"SetSubMenu: AISummary.ApiKey = {(string.IsNullOrEmpty(optSetuna.AISummary.ApiKey) ? "EMPTY" : "SET")}");
+                Logger.Log($"SetSubMenu: AISummary.LocalEndpoint = {optSetuna.AISummary.LocalEndpoint ?? "NULL"}");
+                
+                if (optSetuna.AISummary.Enabled)
+                {
+                    Logger.Log("SetSubMenu: AI Summary is ENABLED - Adding menu item");
+                    var aiSummaryItem = new ToolStripMenuItem("AI Summary...");
+                    aiSummaryItem.Name = "aiSummaryMenuItem"; // Set name so we can find it later
+                    aiSummaryItem.Click += miAISummary_Click;
+                    // Don't check ScrapCount here - will be updated dynamically in menu Opening event
+                    Logger.Log("SetSubMenu: AI Summary menu item added (enabled state will be updated when menu opens)");
+                    setunaIconMenu.Items.Add(aiSummaryItem);
+                    setunaIconMenu.Items.Add(new ToolStripSeparator());
+                    Logger.Log("SetSubMenu: AI Summary menu item added successfully");
+                }
+                else
+                {
+                    Logger.Log("SetSubMenu: AI Summary is DISABLED - Skipping menu item");
+                }
+            }
+            else
+            {
+                Logger.Log("SetSubMenu: WARNING - optSetuna.AISummary is NULL");
+            }
             
             setunaIconMenu.Items.Add(new CDustBoxStyle().GetToolStrip(scrapBook));
             setunaIconMenu.Items.Add(new CDustEraseStyle().GetToolStrip());
@@ -119,6 +147,8 @@ namespace SETUNA
             setunaIconMenu.Items.Add(new COptionStyle().GetToolStrip());
             setunaIconMenu.Items.Add(new ToolStripSeparator());
             setunaIconMenu.Items.Add(new CShutDownStyle().GetToolStrip());
+            
+            Logger.Log("SetSubMenu: Menu setup completed");
         }
 
         // Token: 0x060001F6 RID: 502 RVA: 0x0000A740 File Offset: 0x00008940
@@ -273,6 +303,11 @@ namespace SETUNA
         {
             try
             {
+                Logger.Log("OptionApply: Starting - Rebuilding menu with loaded configuration");
+                
+                // Rebuild tray icon menu with loaded configuration
+                SetSubMenu();
+                
                 keyBook = optSetuna.GetKeyItemBook();
                 if (optSetuna.Setuna.DustBoxEnable)
                 {
@@ -430,29 +465,47 @@ namespace SETUNA
         private void LoadOption()
         {
             var configFile = SetunaOption.ConfigFile;
+            Logger.Log($"LoadOption: Starting - Config file: {configFile}");
+            
             try
             {
                 if (!File.Exists(configFile))
                 {
+                    Logger.Log("LoadOption: Config file does NOT exist - Creating default option");
                     optSetuna = SetunaOption.GetDefaultOption();
                 }
                 else
                 {
+                    Logger.Log("LoadOption: Config file exists - Loading from XML");
                     var allType = SetunaOption.GetAllType();
                     var xmlSerializer = new XmlSerializer(typeof(SetunaOption), allType);
                     var fileStream = new FileStream(configFile, FileMode.Open);
                     optSetuna = (SetunaOption)xmlSerializer.Deserialize(fileStream);
                     fileStream.Close();
+                    Logger.Log("LoadOption: Config loaded successfully from XML");
+                }
+                
+                // Log AI configuration after loading
+                if (optSetuna.AISummary != null)
+                {
+                    Logger.Log($"LoadOption: AI Summary config loaded - Enabled={optSetuna.AISummary.Enabled}, EngineType={optSetuna.AISummary.EngineType}, LocalEndpoint={optSetuna.AISummary.LocalEndpoint}");
+                }
+                else
+                {
+                    Logger.Log("LoadOption: WARNING - AI Summary config is NULL after loading");
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.LogError("LoadOption: Exception occurred while loading config", ex);
                 optSetuna = SetunaOption.GetDefaultOption();
                 MessageBox.Show("无法读取配置文件。\n使用默认设置。", "SETUNA2", MessageBoxButtons.OK, MessageBoxIcon.Hand);
             }
             finally
             {
+                Logger.Log("LoadOption: Calling OptionApply");
                 OptionApply();
+                Logger.Log("LoadOption: Completed");
             }
         }
 
@@ -493,8 +546,7 @@ namespace SETUNA
             Option();
         }
 
-        // AI Summary menu item click handler (TODO: implement AISummaryForm)
-        /*
+        // AI Summary menu item click handler
         private void miAISummary_Click(object sender, EventArgs e)
         {
             if (IsCapture || IsOption)
@@ -504,7 +556,7 @@ namespace SETUNA
 
             try
             {
-                var summaryForm = new AISummaryForm();
+                var summaryForm = new SETUNA.Main.AI.AISummaryForm();
                 summaryForm.StartPosition = FormStartPosition.CenterParent;
                 summaryForm.ShowDialog(this);
             }
@@ -518,7 +570,6 @@ namespace SETUNA
                 );
             }
         }
-        */
 
         // Token: 0x06000203 RID: 515 RVA: 0x0000B0C8 File Offset: 0x000092C8
         private void miSetunaClose_Click(object sender, EventArgs e)
@@ -925,6 +976,18 @@ namespace SETUNA
         private void setunaIconMenu_Opening(object sender, CancelEventArgs e)
         {
             e.Cancel = false;
+            
+            // Dynamically update AI Summary menu item enabled state based on current ScrapCount
+            if (optSetuna?.AISummary?.Enabled == true)
+            {
+                var aiMenuItem = setunaIconMenu.Items.Find("aiSummaryMenuItem", false).FirstOrDefault() as ToolStripMenuItem;
+                if (aiMenuItem != null)
+                {
+                    var hasScr = scrapBook != null && scrapBook.ScrapCount > 0;
+                    aiMenuItem.Enabled = hasScr;
+                    Logger.Log($"setunaIconMenu_Opening: AI Summary menu item enabled = {aiMenuItem.Enabled} (ScrapCount = {scrapBook?.ScrapCount ?? 0})");
+                }
+            }
         }
 
 
