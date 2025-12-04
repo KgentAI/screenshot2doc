@@ -594,6 +594,7 @@ namespace SETUNA.Main.Option
             Styles = new List<CStyle>();
             Setuna = new SetunaOption.SetunaOptionData();
             Scrap = new SetunaOption.ScrapOptionData();
+            AISummary = new AISummaryConfig();
         }
 
         // Token: 0x1700005D RID: 93
@@ -631,7 +632,8 @@ namespace SETUNA.Main.Option
             {
                 typeof(SetunaOption),
                 typeof(CStyle),
-                typeof(Color)
+                typeof(Color),
+                typeof(AISummaryConfig)
             };
             for (var i = 0; i < styleType.Length; i++)
             {
@@ -800,6 +802,9 @@ namespace SETUNA.Main.Option
 
         // Token: 0x04000100 RID: 256
         public List<CStyle> Styles;
+
+        // AI Summary Configuration
+        public AISummaryConfig AISummary;
 
         // Token: 0x0200003D RID: 61
         public class ScrapOptionData
@@ -1149,6 +1154,72 @@ namespace SETUNA.Main.Option
                 Normal,
                 // Token: 0x040001CB RID: 459
                 Capture
+            }
+        }
+
+        // Token: 0x02000057 RID: 87
+        /// <summary>
+        /// AI Summary feature configuration
+        /// </summary>
+        public class AISummaryConfig
+        {
+            /// <summary>
+            /// Enable or disable AI Summary feature
+            /// </summary>
+            public bool Enabled { get; set; }
+
+            /// <summary>
+            /// AI engine type: "local" for local inference, "cloud" for cloud API
+            /// </summary>
+            public string EngineType { get; set; }
+
+            /// <summary>
+            /// Local inference endpoint URL (e.g., http://localhost:8080)
+            /// </summary>
+            public string LocalEndpoint { get; set; }
+
+            /// <summary>
+            /// Cloud API base URL (OpenAI-compatible)
+            /// </summary>
+            public string CloudApiBaseUrl { get; set; }
+
+            /// <summary>
+            /// API Key for cloud service authentication
+            /// </summary>
+            public string ApiKey { get; set; }
+
+            /// <summary>
+            /// Model name to use (e.g., "qwen3-vl-plus", "minicpm-v-4.5")
+            /// </summary>
+            public string ModelName { get; set; }
+
+            /// <summary>
+            /// Maximum number of images to process in a single request
+            /// </summary>
+            public int MaxImages { get; set; }
+
+            /// <summary>
+            /// Request timeout in seconds
+            /// </summary>
+            public int TimeoutSeconds { get; set; }
+
+            /// <summary>
+            /// Custom prompt template for AI analysis
+            /// </summary>
+            public string PromptTemplate { get; set; }
+
+            public AISummaryConfig()
+            {
+                // Default configuration values
+                Enabled = false;
+                EngineType = "local";  // "local" or "cloud"
+                LocalEndpoint = "http://localhost:8080";
+                CloudApiBaseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
+                ApiKey = string.Empty;
+                ModelName = "qwen3-vl-plus";
+                MaxImages = 5;
+                TimeoutSeconds = 30;
+                PromptTemplate = "Analyze the provided screenshots and generate a comprehensive summary in markdown format. Include: 1) Overview section describing the main content, 2) Detailed findings organized with headings and bullet points, 3) Tables for any structured data observed, 4) Key observations section. Use clear hierarchical structure with H1-H3 headings.";
             }
         }
     }

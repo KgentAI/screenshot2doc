@@ -1,13 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using com.clearunit;
 using SETUNA.Main;
+using SETUNA.Main.AI;
 using SETUNA.Main.KeyItems;
 using SETUNA.Main.Option;
 using SETUNA.Main.Style;
@@ -99,6 +101,14 @@ namespace SETUNA
             setunaIconMenu.Scrap = scrapBook.GetDummyScrap();
             setunaIconMenu.Items.Clear();
             setunaIconMenu.Items.Add(new CScrapListStyle().GetToolStrip(scrapBook));
+            
+            // Add AI Summary menu item
+            var aiSummaryItem = new ToolStripMenuItem("AI Summary...");
+            aiSummaryItem.Click += miAISummary_Click;
+            aiSummaryItem.Enabled = scrapBook.Any(s => s.Image != null);
+            setunaIconMenu.Items.Add(aiSummaryItem);
+            setunaIconMenu.Items.Add(new ToolStripSeparator());
+            
             setunaIconMenu.Items.Add(new CDustBoxStyle().GetToolStrip(scrapBook));
             setunaIconMenu.Items.Add(new CDustEraseStyle().GetToolStrip());
             setunaIconMenu.Items.Add(new CDustScrapStyle().GetToolStrip());
@@ -482,6 +492,31 @@ namespace SETUNA
         private void miOption_Click(object sender, EventArgs e)
         {
             Option();
+        }
+
+        // AI Summary menu item click handler
+        private void miAISummary_Click(object sender, EventArgs e)
+        {
+            if (IsCapture || IsOption)
+            {
+                return;
+            }
+
+            try
+            {
+                var summaryForm = new AISummaryForm();
+                summaryForm.StartPosition = FormStartPosition.CenterParent;
+                summaryForm.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Unable to open AI Summary: " + ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
         }
 
         // Token: 0x06000203 RID: 515 RVA: 0x0000B0C8 File Offset: 0x000092C8

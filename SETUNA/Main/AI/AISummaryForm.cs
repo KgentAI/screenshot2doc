@@ -1,0 +1,386 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using SETUNA.Main.AI.Exceptions;
+using SETUNA.Main.AI.Export;
+using SETUNA.Main.AI.Models;
+using SETUNA.Main.AI.Services;
+using SETUNA.Main.AI.UI;
+using SETUNA.Main.Option;
+
+namespace SETUNA.Main.AI
+{
+    /// <summary>
+    /// Main form for AI Screenshot Summary feature
+    /// </summary>
+    public partial class AISummaryForm : BaseForm
+    {
+        private AISummaryConfig _config;
+        private List<ScrapBase> _screenshots;
+        private MultimodalResponse _currentResponse;
+        private CancellationTokenSource _cancellationTokenSource;
+
+        // UI Controls
+        private SplitContainer splitContainer;
+        private FlowLayoutPanel screenshotPanel;
+        private TableLayoutPanel controlBar;
+        private RichTextBox markdownDisplay;
+        private StatusStrip statusBar;
+        private ComboBox engineComboBox;
+        private Button analyzeButton;
+        private Button exportMarkdownButton;
+        private Button exportExcelButton;
+        private ProgressBar progressBar;
+        private ToolStripStatusLabel statusLabel;
+        private ToolStripStatusLabel modelLabel;
+        private ToolStripStatusLabel timeLabel;
+
+        public AISummaryForm()
+        {
+            InitializeComponent();
+            InitializeControls();
+            LoadConfiguration();
+            LoadScreenshots();
+        }
+
+        private void InitializeComponent()
+        {
+            this.Text = "AI Screenshot Summary";
+            this.Size = new Size(1200, 700);
+            this.MinimumSize = new Size(800, 600);
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.ShowInTaskbar = false;
+            this.MaximizeBox = true;
+            this.MinimizeBox = false;
+        }
+
+        private void InitializeControls()
+        {
+            // Create split container
+            splitContainer = new SplitContainer
+            {
+                Dock = DockStyle.Fill,
+                Orientation = Orientation.Vertical,
+                SplitterDistance = 360,
+                FixedPanel = FixedPanel.Panel1
+            };
+
+            // Left panel: Screenshot selection
+            screenshotPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.TopDown,
+                AutoScroll = true,
+                BackColor = SystemColors.Control,
+                Padding = new Padding(10)
+            };
+            splitContainer.Panel1.Controls.Add(screenshotPanel);
+
+            // Right panel setup
+            var rightPanel = new Panel { Dock = DockStyle.Fill };
+
+            // Control bar
+            controlBar = new TableLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 40,
+                ColumnCount = 6,
+                Padding = new Padding(5)
+            };
+            controlBar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
+            controlBar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlBar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlBar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            controlBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
+
+            // Controls in control bar
+            var modelLabel = new Label { Text = "Model:", AutoSize = true, Anchor = AnchorStyles.Left };
+            engineComboBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 200 };
+            engineComboBox.Items.Add("MiniCPM-V-4.5 (Local)");
+            engineComboBox.Items.Add("Qwen3-VL-Flash (Cloud)");
+            
+            analyzeButton = new Button { Text = "Analyze", Width = 100 };
+            analyzeButton.Click += AnalyzeButton_Click;
+            
+            exportMarkdownButton = new Button { Text = "Export Markdown", Width = 130, Enabled = false };
+            exportMarkdownButton.Click += ExportMarkdownButton_Click;
+            
+            exportExcelButton = new Button { Text = "Export Excel", Width = 100, Enabled = false };
+            exportExcelButton.Click += ExportExcelButton_Click;
+            
+            progressBar = new ProgressBar { Visible = false, Width = 100, Style = ProgressBarStyle.Marquee };
+
+            controlBar.Controls.Add(modelLabel, 0, 0);
+            controlBar.Controls.Add(engineComboBox, 1, 0);
+            controlBar.Controls.Add(analyzeButton, 2, 0);
+            controlBar.Controls.Add(exportMarkdownButton, 3, 0);
+            controlBar.Controls.Add(exportExcelButton, 4, 0);
+            controlBar.Controls.Add(progressBar, 5, 0);
+
+            // Markdown display
+            markdownDisplay = new RichTextBox
+            {
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                Font = new Font("Segoe UI", 10),
+                BackColor = Color.White
+            };
+
+            // Status bar
+            statusBar = new StatusStrip();
+            statusLabel = new ToolStripStatusLabel { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
+            this.modelLabel = new ToolStripStatusLabel { TextAlign = ContentAlignment.MiddleRight };
+            timeLabel = new ToolStripStatusLabel { TextAlign = ContentAlignment.MiddleRight };
+            statusBar.Items.Add(statusLabel);
+            statusBar.Items.Add(this.modelLabel);
+            statusBar.Items.Add(timeLabel);
+
+            // Add to right panel
+            rightPanel.Controls.Add(markdownDisplay);
+            rightPanel.Controls.Add(controlBar);
+            rightPanel.Controls.Add(statusBar);
+            splitContainer.Panel2.Controls.Add(rightPanel);
+
+            // Add to form
+            this.Controls.Add(splitContainer);
+        }
+
+        private void LoadConfiguration()
+        {
+            _config = Mainform.Instance.optSetuna.AISummary;
+            if (_config == null)
+            {
+                _config = new AISummaryConfig();
+                Mainform.Instance.optSetuna.AISummary = _config;
+            }
+
+            // Set engine selection
+            if (_config.Engine == "qwen3-vl-flash")
+                engineComboBox.SelectedIndex = 1;
+            else
+                engineComboBox.SelectedIndex = 0;
+        }
+
+        private void LoadScreenshots()
+        {
+            _screenshots = new List<ScrapBase>();
+            
+            var scrapBook = Mainform.Instance.scrapBook;
+            if (scrapBook == null)
+                return;
+
+            foreach (var scrap in scrapBook)
+            {
+                if (scrap.Image != null)
+                {
+                    _screenshots.Add(scrap);
+                }
+            }
+
+            // Sort by DateTime descending
+            _screenshots = _screenshots.OrderByDescending(s => s.DateTime).Take(_config.MaxImages).ToList();
+
+            // Create thumbnails
+            for (int i = 0; i < _screenshots.Count; i++)
+            {
+                var pictureBox = CreateThumbnail(_screenshots[i], i + 1);
+                screenshotPanel.Controls.Add(pictureBox);
+            }
+
+            statusLabel.Text = $"Loaded {_screenshots.Count} screenshot(s)";
+        }
+
+        private PictureBox CreateThumbnail(ScrapBase scrap, int index)
+        {
+            var pb = new PictureBox
+            {
+                Size = new Size(150, 150),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Image = scrap.Image,
+                BorderStyle = BorderStyle.FixedSingle,
+                Margin = new Padding(5)
+            };
+
+            // Add badge with index
+            pb.Paint += (s, e) =>
+            {
+                var g = e.Graphics;
+                var badgeSize = 25;
+                var x = pb.Width - badgeSize - 5;
+                var y = pb.Height - badgeSize - 5;
+                
+                g.FillEllipse(new SolidBrush(Color.FromArgb(217, 255, 255, 255)), x, y, badgeSize, badgeSize);
+                g.DrawEllipse(new Pen(Color.Gray, 2), x, y, badgeSize, badgeSize);
+                
+                var font = new Font("Arial", 12, FontStyle.Bold);
+                var text = index.ToString();
+                var textSize = g.MeasureString(text, font);
+                g.DrawString(text, font, Brushes.Black, x + (badgeSize - textSize.Width) / 2, y + (badgeSize - textSize.Height) / 2);
+            };
+
+            return pb;
+        }
+
+        private async void AnalyzeButton_Click(object sender, EventArgs e)
+        {
+            if (_screenshots == null || _screenshots.Count == 0)
+            {
+                MessageBox.Show("No screenshots available to analyze.", "No Screenshots", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            SetControlsEnabled(false);
+            progressBar.Visible = true;
+            statusLabel.Text = "Analyzing screenshots...";
+
+            try
+            {
+                // Update config from UI
+                _config.Engine = engineComboBox.SelectedIndex == 1 ? "qwen3-vl-flash" : "minicpm-v4.5";
+
+                // Create cancellation token
+                _cancellationTokenSource = new CancellationTokenSource();
+
+                // Perform analysis
+                _currentResponse = await PerformAnalysisAsync(_cancellationTokenSource.Token);
+
+                if (_currentResponse.Success)
+                {
+                    MarkdownRenderer.Render(markdownDisplay, _currentResponse.MarkdownContent);
+                    exportMarkdownButton.Enabled = true;
+                    exportExcelButton.Enabled = true;
+                    statusLabel.Text = "Analysis complete";
+                    timeLabel.Text = $"{_currentResponse.ProcessingTimeMs / 1000.0:F2}s";
+                }
+                else
+                {
+                    MessageBox.Show(_currentResponse.ErrorMessage, "Analysis Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    statusLabel.Text = "Analysis failed";
+                }
+            }
+            catch (AIServiceException ex)
+            {
+                MessageBox.Show(ex.Message, "Service Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                statusLabel.Text = "Analysis failed";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Unexpected error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                statusLabel.Text = "Analysis failed";
+            }
+            finally
+            {
+                SetControlsEnabled(true);
+                progressBar.Visible = false;
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
+            }
+        }
+
+        private async Task<MultimodalResponse> PerformAnalysisAsync(CancellationToken cancellationToken)
+        {
+            var request = new MultimodalRequest
+            {
+                Prompt = _config.PromptTemplate,
+                MaxTokens = 2000,
+                Temperature = 0.7f
+            };
+
+            foreach (var screenshot in _screenshots)
+            {
+                request.Images.Add(screenshot.Image);
+            }
+
+            var service = await MultimodalServiceFactory.GetServiceAsync(_config);
+            modelLabel.Text = service.ModelName;
+            
+            return await service.AnalyzeImagesAsync(request, cancellationToken);
+        }
+
+        private void ExportMarkdownButton_Click(object sender, EventArgs e)
+        {
+            if (_currentResponse == null || !_currentResponse.Success)
+                return;
+
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "Markdown Files (*.md)|*.md|All Files (*.*)|*.*";
+                dialog.DefaultExt = "md";
+                dialog.FileName = MarkdownExporter.GetDefaultFilename();
+                dialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    var metadata = new AISummaryMetadata
+                    {
+                        GeneratedAt = DateTime.Now,
+                        ModelName = modelLabel.Text,
+                        ImageCount = _screenshots.Count,
+                        ProcessingTime = TimeSpan.FromMilliseconds(_currentResponse.ProcessingTimeMs)
+                    };
+
+                    if (MarkdownExporter.ExportToFile(_currentResponse.MarkdownContent, dialog.FileName, metadata))
+                    {
+                        MessageBox.Show($"Exported successfully to:\n{dialog.FileName}", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to export markdown file.", "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void ExportExcelButton_Click(object sender, EventArgs e)
+        {
+            if (_currentResponse == null || !_currentResponse.Success)
+                return;
+
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*";
+                dialog.DefaultExt = "xlsx";
+                dialog.FileName = ExcelExporter.GetDefaultFilename();
+                dialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    string errorMessage;
+                    if (ExcelExporter.ExportTablesToExcel(_currentResponse.MarkdownContent, dialog.FileName, out errorMessage))
+                    {
+                        MessageBox.Show($"Exported successfully to:\n{dialog.FileName}", "Export Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show(errorMessage ?? "Failed to export Excel file.", "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                }
+            }
+        }
+
+        private void SetControlsEnabled(bool enabled)
+        {
+            engineComboBox.Enabled = enabled;
+            analyzeButton.Enabled = enabled;
+            exportMarkdownButton.Enabled = enabled && _currentResponse != null && _currentResponse.Success;
+            exportExcelButton.Enabled = enabled && _currentResponse != null && _currentResponse.Success;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _cancellationTokenSource?.Dispose();
+                _screenshots?.Clear();
+            }
+            base.Dispose(disposing);
+        }
+    }
+}
