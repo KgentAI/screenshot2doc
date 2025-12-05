@@ -1213,13 +1213,13 @@ namespace SETUNA.Main.Option
             {
                 // Default configuration values - should be configured by user
                 Enabled = false;  // Disabled by default until user configures
-                EngineType = "local";  // "local" or "cloud"
+                EngineType = "cloud";  // "local" or "cloud"
                 LocalEndpoint = "http://localhost:8080";
                 CloudApiBaseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
                 ApiKey = string.Empty;  // Must be set by user
-                ModelName = "qwen3-vl-plus";
-                MaxImages = 5;
-                TimeoutSeconds = 30;
+                ModelName = "qwen3-vl-flash";
+                MaxImages = 10;
+                TimeoutSeconds = 120;
                 PromptTemplate = "请从以下屏幕截图中优先抽取“通用/可比的核心指标”，并用 Markdown 表格展示。要求：1) 识别并统一指标名称（如：数值型、百分比、金额、计数等），给出单位；2) 对每张截图提取该指标的值、时间戳（如存在）、来源位置（页面/模块/区块）；3) 输出“指标汇总表”：可以是一个或多个表格；建议按不同维度（如页面/模块、时间窗口、业务类别）分别成表。每个表至少包含【指标名、单位、值、来源截图编号、最小值、最大值、平均值】列；4) 输出“截图元数据表”：列包含【截图编号、来源位置、时间戳、页面/模块】；5) 若存在不一致或异常值，单独列出“数据质量备注”一节；6) 全部输出必须为中文，尽量减少叙述性文字，突出表格。";
             }
         }
