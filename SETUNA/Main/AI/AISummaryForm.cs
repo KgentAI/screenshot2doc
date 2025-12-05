@@ -41,6 +41,7 @@ namespace SETUNA.Main.AI
         private ToolStripStatusLabel statusLabel;
         private ToolStripStatusLabel modelLabel;
         private ToolStripStatusLabel timeLabel;
+        private TextBox contextTextBox;
 
         public AISummaryForm()
         {
@@ -150,7 +151,17 @@ namespace SETUNA.Main.AI
             statusBar.Items.Add(this.modelLabel);
             statusBar.Items.Add(timeLabel);
 
+            // Add context panel (optional user context)
+            var contextPanel = new Panel { Dock = DockStyle.Top, Height = 60, Padding = new Padding(5) };
+            var contextLabel = new Label { Text = "上下文（可选）：", AutoSize = true, Anchor = AnchorStyles.Left };
+            contextTextBox = new TextBox { Multiline = true, Height = 40, Dock = DockStyle.Fill };
+            contextPanel.Controls.Add(contextLabel);
+            contextPanel.Controls.Add(contextTextBox);
+            contextLabel.Location = new Point(5, 10);
+            contextTextBox.Location = new Point(contextLabel.Right + 8, 8);
+
             // Add to right panel
+            rightPanel.Controls.Add(contextPanel);
             rightPanel.Controls.Add(markdownDisplay);
             rightPanel.Controls.Add(controlBar);
             rightPanel.Controls.Add(statusBar);
@@ -327,9 +338,18 @@ namespace SETUNA.Main.AI
 
         private async Task<MultimodalResponse> PerformAnalysisAsync(CancellationToken cancellationToken)
         {
+            // Compose prompt with optional user context and metrics-first directive (Chinese output enforced)
+            var basePrompt = _config.PromptTemplate ?? string.Empty;
+            var extraDirective = "请优先抽取通用/可比的核心指标，并以一个或多个 Markdown 表格输出；如维度不同（页面/模块、时间、业务类别），请拆分为多张表。";
+            var userContext = contextTextBox?.Text?.Trim();
+            var composedCore = string.IsNullOrEmpty(userContext)
+                ? $"{basePrompt}\n{extraDirective}"
+                : $"分析上下文：{userContext}\n\n{basePrompt}\n{extraDirective}";
+            var composedPrompt = $"{composedCore}\n请严格按照以上要求以中文输出。";
+
             var request = new MultimodalRequest
             {
-                Prompt = _config.PromptTemplate,
+                Prompt = composedPrompt,
                 MaxTokens = 2000,
                 Temperature = 0.7f
             };
